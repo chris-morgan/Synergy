@@ -3,44 +3,44 @@ package Synergy::Reactor::Who;
 
 use Moose;
 use DateTime;
-with 'Synergy::Role::Reactor';
+with 'Synergy::Role::Reactor', 'Synergy::Role::EasyListening';
 
 use experimental qw(signatures);
 use namespace::clean;
 use List::Util qw(first);
 
-sub listener_specs {
-  return {
-    name      => 'who',
-    method    => 'handle_who',
-    exclusive => 1,
-    predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^who/i },
-  };
-}
+use Synergy::Logger '$Logger';
 
-sub handle_who ($self, $event) {
-  $event->mark_handled;
+__PACKAGE__->add_command(who =>
+  { help => "who is USER: look up a user by name" },
+  sub ($self, $event, $arg) {
+    my $what = $arg->{rest};
 
-  my ($what) = $event->text =~ /^who\s*(.*)/;
-  $what =~ s/\s*\?*\z//;
+    return unless length $what && $what =~ s/\A(is|am|are)\s+//n;
 
-  if ($what =~ /\A\s*(is|are)\s+(you|synergy)\s*\z/) {
-    return $event->reply(
-      qq!I am Synergy, a holographic computer designed to be the ultimate audio-visual entertainment synthesizer.  I also help out with the timekeeping.!);
+    $what =~ s/\s*\?*\z//;
+
+    $event->mark_handled;
+
+    if ($what =~ /\A(you|synergy)\s*\z/i) {
+      return $event->reply(
+          qq!I am Synergy, a holographic computer designed to be the ultimate !
+        . qq!audio-visual entertainment synthesizer.  I also help out with the !
+        . qq!timekeeping.!
+      );
+    }
+
+    my $who = $self->resolve_name($what, $event->from_user);
+    return $event->reply(qq!I don't know who "$what" is.!) if ! $who;
+
+    my $whois = sprintf "%s (%s)", $who->username, $who->realname;
+
+    if ($what eq $who->username) {
+      return $event->reply(qq{"$what" is $whois.});
+    }
+
+    $event->reply(qq["$what" is an alias for $whois.]);
   }
-
-  return -1 unless $what =~ s/\A(is|am)\s+//n;
-
-  my $who = $self->resolve_name($what, $event->from_user);
-  return $event->reply(qq!I don't know who "$what" is.!) if ! $who;
-
-  my $whois = sprintf "%s (%s)", $who->username, $who->realname;
-
-  if ($what eq $who->username) {
-    return $event->reply(qq{"$what" is $whois.});
-  }
-
-  $event->reply(qq["$what" is an alias for $whois.]);
-}
+);
 
 1;

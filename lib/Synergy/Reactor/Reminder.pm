@@ -3,7 +3,7 @@ package Synergy::Reactor::Reminder;
 
 use Moose;
 use DateTime;
-with 'Synergy::Role::Reactor';
+with 'Synergy::Role::Reactor', 'Synergy::Role::EasyListening';
 
 use experimental qw(signatures);
 use namespace::clean;
@@ -13,14 +13,12 @@ use List::Util qw(first);
 use Time::Duration::Parse;
 use Synergy::Util qw(parse_date_for_user);
 
-sub listener_specs {
-  return {
-    name      => 'remind',
-    method    => 'handle_remind',
-    exclusive => 1,
-    predicate => sub ($, $e) { $e->was_targeted && $e->text =~ /^remind /i },
-  };
-}
+__PACKAGE__->add_listener({
+  name      => 'remind',
+  method    => 'handle_remind',
+  exclusive => 1,
+  predicate => sub ($, $e) { $e->was_targeted && $e->text =~ /^remind /i },
+});
 
 has page_channel_name => (
   is  => 'ro',

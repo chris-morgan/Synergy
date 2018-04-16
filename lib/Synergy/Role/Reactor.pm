@@ -10,21 +10,23 @@ use Synergy::Listener;
 
 with 'Synergy::Role::HubComponent';
 
-has listeners => (
-  isa => 'ArrayRef',
-  traits  => [ 'Array' ],
-  handles => { listeners => 'elements' },
-  default => sub ($self, @) {
-    # { name, predicate, exclusive, method }
-    my @listeners = map {;
-      Synergy::Listener->new({
-        $_->%{ qw( name predicate exclusive method ) }
-      });
-    } $self->listener_specs;
-
-    return \@listeners;
-  },
-);
+# has listeners => (
+#   isa => 'ArrayRef',
+#   traits  => [ 'Array' ],
+#   handles => { listeners => 'elements' },
+#   default => sub ($self, @) {
+#     # { name, predicate, exclusive, method }
+#     my @listeners;
+#     for my $spec ($self->listener_specs) {
+#       push @listeners, Synergy::Listener->new({
+#         map {; exists $spec->{$_} ? ($_ => $spec->{$_}) : () }
+#           qw( name predicate exclusive method help_entries )
+#       });
+#     }
+#
+#     return \@listeners;
+#   },
+# );
 
 sub start ($self) { }
 

@@ -3,7 +3,7 @@ package Synergy::Reactor::Page;
 
 use Moose;
 use DateTime;
-with 'Synergy::Role::Reactor';
+with 'Synergy::Role::Reactor', 'Synergy::Role::EasyListening';
 
 use experimental qw(signatures);
 use namespace::clean;
@@ -15,14 +15,12 @@ has page_channel_name => (
   required => 1,
 );
 
-sub listener_specs {
-  return {
-    name      => 'page',
-    method    => 'handle_page',
-    exclusive => 1,
-    predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^page/i },
-  };
-}
+__PACKAGE__->add_listener({
+  name      => 'page',
+  method    => 'handle_page',
+  exclusive => 1,
+  predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^page/i },
+});
 
 sub start ($self) {
   my $name = $self->page_channel_name;

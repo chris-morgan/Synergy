@@ -2,7 +2,7 @@ use v5.24.0;
 package Synergy::Reactor::Announce;
 
 use Moose;
-with 'Synergy::Role::Reactor';
+with 'Synergy::Role::Reactor', 'Synergy::Role::EasyListening';
 
 use experimental qw(signatures);
 use Carp;
@@ -20,13 +20,11 @@ has to_address => (
   required => 1,
 );
 
-sub listener_specs {
-  return {
-    name      => 'announce',
-    method    => 'handle_announce',
-    predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^announce/i },
-  };
-}
+__PACKAGE__->add_listener({
+  name      => 'announce',
+  method    => 'handle_announce',
+  predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^announce/i },
+});
 
 sub start ($self) {
   my $name = $self->to_channel_name;

@@ -3,23 +3,22 @@ package Synergy::Reactor::Clox;
 
 use Moose;
 use DateTime;
-with 'Synergy::Role::Reactor';
+with 'Synergy::Role::Reactor', 'Synergy::Role::EasyListening';
 
 use experimental qw(signatures);
 use namespace::clean;
 use List::Util qw(first uniq);
 use Synergy::Util qw(parse_date_for_user);
 
-sub listener_specs {
-  return {
-    name      => 'clox',
-    method    => 'handle_clox',
-    exclusive => 1,
-    predicate => sub ($self, $e) {
-      return unless $e->was_targeted;
-      return unless $e->text =~ /\Aclox(?:\s+.+)?/; },
-  };
-}
+__PACKAGE__->add_listener({
+  name      => 'clox',
+  method    => 'handle_clox',
+  exclusive => 1,
+  predicate => sub ($self, $e) {
+    return unless $e->was_targeted;
+    return unless $e->text =~ /\Aclox(?:\s+.+)?/;
+  },
+});
 
 has time_zone_names => (
   is  => 'ro',
