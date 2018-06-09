@@ -4,6 +4,7 @@ package Synergy::Role::EasyListening;
 use MooseX::Role::Parameterized;
 
 use experimental qw(signatures);
+use Params::Util qw(_HASHLIKE _CODELIKE);
 use namespace::clean;
 
 role {
@@ -18,8 +19,25 @@ role {
     }
   };
 
-  method add_command => sub ($self, $name, $x1, $x2 = undef) {
-    my ($code, $arg) = defined $x2 ? ($x2, $x1) : ($x1, $x2);
+  method add_command => sub {
+    my $self = shift;
+    my $name = shift;
+
+    my $arg;
+    $arg = _HASHLIKE($_[0]) ? shift : {};
+
+    my $method = _CODELIKE($_[0])       ? shift
+               : ($_[0] && ! ref $_[0]) ? shift
+               :                          "cmd_$name";
+
+    Carp::confess("weird-o leftover arguments when adding $name command: @_")
+      if @_;
+
+    my @help;
+    if ($arg->{help}) {
+      @help = map {; { title => $name, text => $_ } }
+              (ref $arg->{help} ? $arg->{help}->@* : $arg->{help});
+    }
 
     my $listener = Synergy::Listener->new({
       name      => $name,
@@ -27,13 +45,11 @@ role {
       predicate => sub ($self, $e) {
         return $e->was_targeted && $e->text =~ /\A\Q$name\E(\s|\z)/ni;
       },
-      method    => sub ($self, $e, $rch) {
+      method    => sub ($self, $e) {
         my ($cmd, $rest) = split /\s+/, $e->text, 2;
-        $code->($self, $e, $rch, { cmd => $cmd, rest => $rest });
+        $self->$method($e, { cmd => $cmd, rest => $rest });
       },
-      help_entries => [
-        $arg->{help} ? { title => $name, text => $arg->{help} } : ()
-      ],
+      (@help ? (help_entries => \@help) : ()),
     });
 
     push @listeners, $listener;

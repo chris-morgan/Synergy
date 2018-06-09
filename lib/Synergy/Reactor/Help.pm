@@ -9,25 +9,36 @@ use experimental qw(signatures);
 use namespace::clean;
 use List::Util qw(first uniq);
 
-__PACKAGE__->add_listener({
-  name      => 'help',
-  method    => 'handle_help',
-  exclusive => 1,
-  predicate => sub ($self, $e) { $e->was_targeted && $e->text eq 'help' },
-  help_entries => [
-    { title => "help", text => "provides help with using the bot" },
-  ],
-});
+__PACKAGE__->add_command(
+  help => {
+    help => [
+      "help -- see a list of known help topics",
+      "help TOPIC -- learn about a topic",
+    ]
+  }
+);
 
-sub handle_help ($self, $event, $rch) {
+sub cmd_help ($self, $event, $arg) {
   $event->mark_handled;
 
   my @help = map {; $_->help_entries }
              map {; $_->listeners }
              $self->hub->reactors;
 
-  my $help_str = join q{, }, sort map {; $_->{title} } @help;
-  $rch->reply("Help entries: $help_str");
+  unless ($arg->{rest}) {
+    my $help_str = join q{, }, uniq sort map {; $_->{title} } @help;
+    $event->reply("Help entries: $help_str");
+    return;
+  }
+
+  @help = grep {; fc $_->{title} eq fc $arg->{rest} } @help;
+
+  unless (@help) {
+    $event->reply("Sorry, I don't have any help on that topic.");
+    return;
+  }
+
+  $event->reply(join qq{\n}, sort map {; $_->{text} } @help);
   return;
 }
 

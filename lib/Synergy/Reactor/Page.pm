@@ -15,13 +15,6 @@ has page_channel_name => (
   required => 1,
 );
 
-__PACKAGE__->add_listener({
-  name      => 'page',
-  method    => 'handle_page',
-  exclusive => 1,
-  predicate => sub ($self, $e) { $e->was_targeted && $e->text =~ /^page/i },
-});
-
 sub start ($self) {
   my $name = $self->page_channel_name;
   my $channel = $self->hub->channel_named($name);
@@ -29,10 +22,14 @@ sub start ($self) {
     unless $channel;
 }
 
-sub handle_page ($self, $event) {
+__PACKAGE__->add_command(
+  page => { help => "page WHO: MESSAGE -- send a page" }
+);
+
+sub cmd_page ($self, $event, $arg) {
   $event->mark_handled;
 
-  my ($who, $what) = $event->text =~ m/^page\s+@?([a-z]+):\s+(.*)/is;
+  my ($who, $what) = $arg->{rest} =~ m/^@?([a-z]+):\s+(.*)/is;
 
   unless (length $who and length $what) {
     $event->reply("usage: page USER: MESSAGE");

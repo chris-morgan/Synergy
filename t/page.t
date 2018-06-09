@@ -24,6 +24,7 @@ my $synergy = Synergy::Hub->synergize(
       'test-1' => {
         class     => 'Synergy::Channel::Test',
         todo      => [
+          [ send    => { text => "synergy: help page" }  ],
           [ send    => { text => "synergy: page roxy: $PAGE" }  ],
           [ wait    => { seconds => 1  }  ],
         ],
